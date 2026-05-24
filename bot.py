@@ -1,54 +1,50 @@
 import os
+import time
 import telebot
 import google.generativeai as genai
 
-# --- الإعدادات والمفاتيح المدمجة بأمان ---
+# --- المفاتيح والتوكن ---
 TOKEN = "8984182509:AAFwLft__ZRL52grDeqTstV37ZRVcSr6URQ"
 GEMINI_API_KEY = "AIzaSyA-gSgaswIYJevC7ZF-Gr_zQj2Pj0UXYMQ"
 
-# تهيئة وإعداد تليجرام والذكاء الاصطناعي
+# تهيئة تليجرام وإعداد الذكاء الاصطناعي
 bot = telebot.TeleBot(TOKEN)
 genai.configure(api_key=GEMINI_API_KEY)
 
-# قاموس لتخزين ذاكرة المحادثة المستمرة لكل مستخدم (شات خاص)
+# قاموس لذاكرة المحادثة المستمرة
 chat_sessions = {}
 
-print("🔄 جاري إلغاء الـ Webhook القديم وتنظيف الاتصال...")
+print("🔄 تنظيف أي اتصالات أو ويب هوك قديم...")
 try:
     bot.remove_webhook()
+    time.sleep(1)  # تأخير بسيط لضمان فك التعارض مع السيرفر القديم
     print("✅ تم تنظيف الاتصال بنجاح!")
 except Exception as e:
-    print(f"⚠️ تنبيه أثناء تنظيف الـ Webhook: {e}")
+    print(f"⚠️ تنبيه: {e}")
 
-# --- [1] معالج الصور في الخاص ---
+# --- [1] معالج الصور ---
 @bot.message_handler(content_types=['photo'])
 def handle_private_photo(message):
     chat_id = message.chat.id
-    user_id = message.from_user.id
-    caption = message.caption.strip() if message.caption else ""
-
-    if not caption:
-        caption = "حلل هذه الصورة واشرح ما بداخلها بالتفصيل باللغة العربية."
+    caption = message.caption.strip() if message.caption else "حلل هذه الصورة واشرح ما بداخلها بالتفصيل باللغة العربية."
 
     try:
-        msg_waiting = bot.reply_to(message, "🔄 لارا تقوم بتحميل الصورة وتحليلها بالذكاء الاصطناعي الفائق... انتظر لحظة.")
+        msg_waiting = bot.reply_to(message, "🔄 لارا تقوم بتحميل الصورة وتحليلها بالذكاء الاصطناعي الفائق...")
         
-        # تحميل ملف الصورة من تليجرام
         file_info = bot.get_file(message.photo[-1].file_id)
         downloaded_file = bot.download_file(file_info.file_path)
         
-        # تحويل الصورة إلى بايتات متوافقة
         image_parts = [{"mime_type": "image/jpeg", "data": downloaded_file}]
         
-        # استخدام نموذج الذكاء الاصطناعي السريع والمستقر
+        # استخدام النموذج الأساسي المستقر بالمسار الصحيح
         model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content([caption, image_parts[0]])
         
         bot.edit_message_text(response.text, chat_id, msg_waiting.message_id)
     except Exception as e:
-        bot.reply_to(message, f"❌ نعتذر، فشل معالجة الصورة. السبب: {e}")
+        bot.reply_to(message, f"❌ فشل معالجة الصورة. السبب: {e}")
 
-# --- [2] معالج النصوص والمحادثة المستمرة (الذاكرة) ---
+# --- [2] معالج النصوص والذاكرة ---
 @bot.message_handler(func=lambda m: True)
 def handle_private_text(message):
     if not message.text: return
@@ -56,23 +52,21 @@ def handle_private_text(message):
     user_id = message.from_user.id
 
     if text == "/start":
-        bot.reply_to(message, "🧠 أهلاً بك! أنا لارا، مساعدتك الشخصية بأقوى ذكاء اصطناعي (Gemini).\n\nيمكنك الآن التحدث معي مباشرة، وطرح أسئلتك، أو إرسال شفرات برمجية، أو حتى إرسال صور لأقوم بتحليلها وشرحها لك فوراً!")
+        bot.reply_to(message, "🧠 أهلاً بك! أنا لارا، مساعدتك الشخصية بأقوى ذكاء اصطناعي.\n\nتحدث معي مباشرة، وطرح أسئلتك، أو أرسل صوراً لأقوم بتحليلها فوراً!")
         return
 
     try:
-        # إنشاء جلسة شات محتفظة بالذاكرة للمستخدم (باستخدام الفلاش المستقر)
+        # إنشاء جلسة شات بالمسار المحدث المستقر
         if user_id not in chat_sessions:
             model = genai.GenerativeModel('gemini-1.5-flash')
             chat_sessions[user_id] = model.start_chat(history=[])
         
-        # إرسال الرسالة واستقبال الرد بناءً على الذاكرة
         response = chat_sessions[user_id].send_message(text)
         bot.reply_to(message, response.text)
     except Exception as e:
-        # طباعة الخطأ الفعلي لمساعدتك في حال حدوث أي شيء
         bot.reply_to(message, f"❌ عذراً، واجهت مشكلة في الاتصال بالذكاء الاصطناعي.\nالسبب: {e}")
 
-# تشغيل البوت بنظام السحب الدوري المستمر وتجاوز أي أخطاء اتصال مؤقتة
 if __name__ == "__main__":
-    print("🚀 بوت لارا الشخصي يعمل الآن بنظام Polling المستقر... أرسل رسالة في تليجرام!")
+    print("🚀 بوت لارا الشخصي ينطلق الآن بنظام Polling المستقر...")
+    # استخدام سريان نظيف وتخطي الرسائل المتراكمة القديمة لحل التعارض 409
     bot.infinity_polling(skip_pending=True)
