@@ -3,22 +3,15 @@ import time
 import telebot
 import requests
 
-# --- الإعدادات الأساسية والمفاتيح ---
+# --- الإعدادات ---
 TOKEN = "8984182509:AAFwLft__ZRL52grDeqTstV37ZRVcSr6URQ"
 GEMINI_API_KEY = "AIzaSyA-gSgaswIYJevC7ZF-Gr_zQj2Pj0UXYMQ"
 
 bot = telebot.TeleBot(TOKEN)
 
-print("🔄 تنظيف اتصالات السيرفر القديمة والويب هوك...")
-try:
-    bot.remove_webhook()
-    time.sleep(1)
-    print("✅ السيرفر نظيف تماماً وجاهز!")
-except Exception as e:
-    print(f"⚠️ تنبيه أثناء التنظيف: {e}")
-
-# دالة الاتصال المباشر بجوجل لتجاوز مشاكل الـ 404 وإصدارات المكتبة القديمة
+# دالة الاتصال المباشر بجوجل بالمسار الصحيح والمستقر
 def ask_gemini_direct(text_prompt):
+    # استخدام المسار المحدث والمستقر
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = {"Content-Type": "application/json"}
     payload = {
@@ -34,33 +27,18 @@ def ask_gemini_direct(text_prompt):
         else:
             return f"❌ خطأ من خادم جوجل (كود {response.status_code}):\n{response.text}"
     except Exception as e:
-        return f"❌ فشل الاتصال المباشر بجوجل. السبب: {e}"
+        return f"❌ فشل الاتصال. السبب: {e}"
 
-# --- معالج النصوص والرسائل الفردية ---
-@bot.message_handler(func=lambda message: True)
-def handle_private_text(message):
-    if not message.text:
+@bot.message_handler(func=lambda m: True)
+def handle_text(message):
+    if not message.text or message.text == "/start":
+        bot.reply_to(message, "🚀 لارا جاهزة! أرسل سؤالك الآن.")
         return
     
-    text = message.text.strip()
-
-    if text == "/start":
-        bot.reply_to(message, "🧠 أهلاً بك! أنا لارا، مساعدتك الشخصية بأقوى ذكاء اصطناعي مستقر ومباشر.\n\nتحدث معي الآن وسأجيبك فوراً!")
-        return
-
-    # تشغيل حركة "جاري الكتابة..." لتأكيد التفاعل
-    try:
-        bot.send_chat_action(message.chat.id, 'typing')
-    except Exception:
-        pass
-    
-    # جلب الرد من خادم جوجل مباشرة
-    reply = ask_gemini_direct(text)
-    
-    # إرسال الإجابة للمستخدم
+    bot.send_chat_action(message.chat.id, 'typing')
+    reply = ask_gemini_direct(message.text)
     bot.reply_to(message, reply)
 
-# تشغيل البوت بنظام السحب الدوري وتخطي أي رسائل قديمة عالقة بالخلفية
 if __name__ == "__main__":
-    print("🚀 بوت لارا ينطلق الآن بأقوى وأسرع اتصال مباشر...")
+    bot.remove_webhook()
     bot.infinity_polling(skip_pending=True)
