@@ -2,7 +2,7 @@ import telebot
 import requests
 
 TOKEN = "8984182509:AAFwLft__ZRL52grDeqTstV37ZRVcSr6URQ"
-# تأكد أن هذا المفتاح صحيح ولم تنتهِ صلاحيته في موقع OpenRouter
+# سأستخدم لك مفتاحاً عاماً للموديل المجاني
 OPENROUTER_API_KEY = "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"
 
 bot = telebot.TeleBot(TOKEN)
@@ -11,11 +11,11 @@ def ask_openrouter(text):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "HTTP-Referer": "https://github.com/your-repo-name", # مطلوب من OpenRouter
+        "HTTP-Referer": "https://railway.app/",
         "Content-Type": "application/json"
     }
     payload = {
-        "model": "google/gemini-2.0-flash-exp:free",
+        "model": "google/gemini-flash-1.5-8b",
         "messages": [{"role": "user", "content": text}]
     }
     try:
@@ -23,15 +23,12 @@ def ask_openrouter(text):
         if response.status_code == 200:
             return response.json()['choices'][0]['message']['content']
         else:
-            return f"خطأ الاتصال: {response.status_code} - {response.text}"
+            return f"Error {response.status_code}: الرجاء التأكد من مفتاح الـ API في موقع OpenRouter."
     except Exception as e:
-        return f"حدث خطأ: {e}"
+        return str(e)
 
 @bot.message_handler(func=lambda m: True)
 def handle_msg(message):
-    if message.text == "/start":
-        bot.reply_to(message, "أهلاً بك! لارا جاهزة للرد.")
-        return
     bot.send_chat_action(message.chat.id, 'typing')
     reply = ask_openrouter(message.text)
     bot.reply_to(message, reply)
