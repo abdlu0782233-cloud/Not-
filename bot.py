@@ -1,36 +1,27 @@
 import telebot
 import requests
 
-# التوكن الجديد الخاص بك
+# لا تضع أي مسافات هنا، فقط ضع المفاتيح بين العلامتين
 TOKEN = "8699507145:AAGdWfpMNUXqk0Db1qSGinCJwjNBk1eXu5E"
-# مفتاح OpenRouter الجديد (إذا استمر خطأ 401، أنشئ مفتاحاً جديداً من موقعهم)
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "Sk-or-v1-049b43537b211a101fc95785e70043c0b1b133ca8fd705647b6258ca7ee7cdf1"
 
 bot = telebot.TeleBot(TOKEN)
 
-def ask_openrouter(text):
+@bot.message_handler(func=lambda m: True)
+def handle_msg(message):
     url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY.strip()}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": "google/gemini-2.0-flash-exp:free",
-        "messages": [{"role": "user", "content": text}]
-    }
+    headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json"}
+    payload = {"model": "google/gemini-2.0-flash-exp:free", "messages": [{"role": "user", "content": message.text}]}
+    
     try:
         response = requests.post(url, json=payload, headers=headers)
         if response.status_code == 200:
-            return response.json()['choices'][0]['message']['content']
+            reply = response.json()['choices'][0]['message']['content']
         else:
-            return f"خطأ ({response.status_code}): تأكد من مفتاح OpenRouter."
+            reply = f"خطأ الاتصال (401): تأكد من المفتاح. كود الخطأ: {response.status_code}"
     except Exception as e:
-        return f"خطأ: {str(e)}"
-
-@bot.message_handler(func=lambda m: True)
-def handle_msg(message):
-    bot.send_chat_action(message.chat.id, 'typing')
-    reply = ask_openrouter(message.text)
+        reply = "حدث خطأ في النظام."
+        
     bot.reply_to(message, reply)
 
 if __name__ == "__main__":
