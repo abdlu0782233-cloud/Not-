@@ -40,13 +40,13 @@ def handle_private_photo(message):
         # تحويل الصورة إلى بايتات متوافقة
         image_parts = [{"mime_type": "image/jpeg", "data": downloaded_file}]
         
-        # استخدام نموذج الذكاء الاصطناعي القوي في تحليل الصور
-        model = genai.GenerativeModel('gemini-1.5-pro')
+        # استخدام نموذج الذكاء الاصطناعي السريع والمستقر
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content([caption, image_parts[0]])
         
         bot.edit_message_text(response.text, chat_id, msg_waiting.message_id)
     except Exception as e:
-        bot.reply_to(message, "❌ نعتذر، فشل معالجة الصورة. تأكد من إعدادات المفاتيح.")
+        bot.reply_to(message, f"❌ نعتذر، فشل معالجة الصورة. السبب: {e}")
 
 # --- [2] معالج النصوص والمحادثة المستمرة (الذاكرة) ---
 @bot.message_handler(func=lambda m: True)
@@ -56,20 +56,21 @@ def handle_private_text(message):
     user_id = message.from_user.id
 
     if text == "/start":
-        bot.reply_to(message, "🧠 أهلاً بك! أنا لارا، مساعدتك الشخصية بأقوى ذكاء اصطناعي (Gemini Pro).\n\nيمكنك الآن التحدث معي مباشرة، وطرح أسئلتك، أو إرسال شفرات برمجية، أو حتى إرسال صور لأقوم بتحليلها وشرحها لك فوراً مع ميزة حفظ سياق كلامنا!")
+        bot.reply_to(message, "🧠 أهلاً بك! أنا لارا، مساعدتك الشخصية بأقوى ذكاء اصطناعي (Gemini).\n\nيمكنك الآن التحدث معي مباشرة، وطرح أسئلتك، أو إرسال شفرات برمجية، أو حتى إرسال صور لأقوم بتحليلها وشرحها لك فوراً!")
         return
 
     try:
-        # إنشاء جلسة شات محتفظة بالذاكرة للمستخدم
+        # إنشاء جلسة شات محتفظة بالذاكرة للمستخدم (باستخدام الفلاش المستقر)
         if user_id not in chat_sessions:
-            model = genai.GenerativeModel('gemini-1.5-pro')
+            model = genai.GenerativeModel('gemini-1.5-flash')
             chat_sessions[user_id] = model.start_chat(history=[])
         
         # إرسال الرسالة واستقبال الرد بناءً على الذاكرة
         response = chat_sessions[user_id].send_message(text)
         bot.reply_to(message, response.text)
     except Exception as e:
-        bot.reply_to(message, "❌ عذراً، واجهت مشكلة في معالجة النص، يرجى المحاولة مرة أخرى.")
+        # طباعة الخطأ الفعلي لمساعدتك في حال حدوث أي شيء
+        bot.reply_to(message, f"❌ عذراً، واجهت مشكلة في الاتصال بالذكاء الاصطناعي.\nالسبب: {e}")
 
 # تشغيل البوت بنظام السحب الدوري المستمر وتجاوز أي أخطاء اتصال مؤقتة
 if __name__ == "__main__":
