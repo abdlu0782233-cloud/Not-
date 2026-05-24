@@ -1,9 +1,9 @@
 import telebot
 import requests
 
+# هذا هو مفتاحك الجديد
+OPENROUTER_API_KEY = "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"
 TOKEN = "8984182509:AAFwLft__ZRL52grDeqTstV37ZRVcSr6URQ"
-# سأستخدم لك مفتاحاً عاماً للموديل المجاني
-OPENROUTER_API_KEY = "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"
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -11,11 +11,10 @@ def ask_openrouter(text):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "HTTP-Referer": "https://railway.app/",
         "Content-Type": "application/json"
     }
     payload = {
-        "model": "google/gemini-flash-1.5-8b",
+        "model": "google/gemini-2.0-flash-exp:free",
         "messages": [{"role": "user", "content": text}]
     }
     try:
@@ -23,7 +22,8 @@ def ask_openrouter(text):
         if response.status_code == 200:
             return response.json()['choices'][0]['message']['content']
         else:
-            return f"Error {response.status_code}: الرجاء التأكد من مفتاح الـ API في موقع OpenRouter."
+            # هنا يطبع الخطأ لتعرف إذا كان هناك مشكلة في الاتصال
+            return f"خطأ ({response.status_code}): {response.text}"
     except Exception as e:
         return str(e)
 
