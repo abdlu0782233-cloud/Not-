@@ -1,7 +1,7 @@
 import telebot
 import requests
 
-# تم إضافة المفتاح الخاص بك في الكود مباشرة
+# استخدم مفتاحك الجديد والمباشر هنا
 OPENROUTER_API_KEY = "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"
 TOKEN = "8984182509:AAFwLft__ZRL52grDeqTstV37ZRVcSr6URQ"
 
@@ -22,7 +22,7 @@ def ask_openrouter(text):
         if response.status_code == 200:
             return response.json()['choices'][0]['message']['content']
         else:
-            return f"خطأ ({response.status_code}): يرجى التأكد من أن المفتاح نشط في موقع OpenRouter."
+            return f"خطأ ({response.status_code}): تأكد من أن مفتاحك صالح في موقع OpenRouter."
     except Exception as e:
         return f"حدث خطأ: {str(e)}"
 
@@ -33,5 +33,6 @@ def handle_msg(message):
     bot.reply_to(message, reply)
 
 if __name__ == "__main__":
+    # هذا السطر ينهي أي تعارض للـ 409
     bot.remove_webhook()
     bot.infinity_polling(skip_pending=True)
