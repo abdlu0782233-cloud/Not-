@@ -1,8 +1,8 @@
 import telebot
 import requests
 
-# الإعدادات
 TOKEN = "8984182509:AAFwLft__ZRL52grDeqTstV37ZRVcSr6URQ"
+# تأكد أن هذا المفتاح صحيح ولم تنتهِ صلاحيته في موقع OpenRouter
 OPENROUTER_API_KEY = "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"
 
 bot = telebot.TeleBot(TOKEN)
@@ -11,6 +11,7 @@ def ask_openrouter(text):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "HTTP-Referer": "https://github.com/your-repo-name", # مطلوب من OpenRouter
         "Content-Type": "application/json"
     }
     payload = {
@@ -22,12 +23,15 @@ def ask_openrouter(text):
         if response.status_code == 200:
             return response.json()['choices'][0]['message']['content']
         else:
-            return f"خطأ الاتصال (كود {response.status_code})"
+            return f"خطأ الاتصال: {response.status_code} - {response.text}"
     except Exception as e:
-        return str(e)
+        return f"حدث خطأ: {e}"
 
 @bot.message_handler(func=lambda m: True)
 def handle_msg(message):
+    if message.text == "/start":
+        bot.reply_to(message, "أهلاً بك! لارا جاهزة للرد.")
+        return
     bot.send_chat_action(message.chat.id, 'typing')
     reply = ask_openrouter(message.text)
     bot.reply_to(message, reply)
