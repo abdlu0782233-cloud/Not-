@@ -1,28 +1,24 @@
 import os
 import telebot
-from flask import Flask, request
 import google.generativeai as genai
 
-# --- الإعدادات والمفاتيح المدمجة بنجاح ---
+# --- الإعدادات والمفاتيح المدمجة بأمان ---
 TOKEN = "8984182509:AAFwLft__ZRL52grDeqTstV37ZRVcSr6URQ"
-WEBHOOK_URL = "https://web-production-aa4e6.up.railway.app/" 
 GEMINI_API_KEY = "AIzaSyA-gSgaswIYJevC7ZF-Gr_zQj2Pj0UXYMQ"
 
 # تهيئة وإعداد تليجرام والذكاء الاصطناعي
 bot = telebot.TeleBot(TOKEN)
 genai.configure(api_key=GEMINI_API_KEY)
 
-app = Flask(__name__) 
-
 # قاموس لتخزين ذاكرة المحادثة المستمرة لكل مستخدم (شات خاص)
 chat_sessions = {}
 
-# تفعيل الويب هوك تلقائياً عند بدء تشغيل الكود
+print("🔄 جاري إلغاء الـ Webhook القديم وتنظيف الاتصال...")
 try:
     bot.remove_webhook()
-    bot.set_webhook(url=WEBHOOK_URL + TOKEN)
+    print("✅ تم تنظيف الاتصال بنجاح!")
 except Exception as e:
-    print(f"Webhook setup error: {e}")
+    print(f"⚠️ تنبيه أثناء تنظيف الـ Webhook: {e}")
 
 # --- [1] معالج الصور في الخاص ---
 @bot.message_handler(content_types=['photo'])
@@ -50,7 +46,7 @@ def handle_private_photo(message):
         
         bot.edit_message_text(response.text, chat_id, msg_waiting.message_id)
     except Exception as e:
-        bot.reply_to(message, "❌ نعتذر، فشل معالجة الصورة. تأكد من إعدادات السيرفر والمفاتيح.")
+        bot.reply_to(message, "❌ نعتذر، فشل معالجة الصورة. تأكد من إعدادات المفاتيح.")
 
 # --- [2] معالج النصوص والمحادثة المستمرة (الذاكرة) ---
 @bot.message_handler(func=lambda m: True)
@@ -75,20 +71,7 @@ def handle_private_text(message):
     except Exception as e:
         bot.reply_to(message, "❌ عذراً، واجهت مشكلة في معالجة النص، يرجى المحاولة مرة أخرى.")
 
-# استقبال التحديثات والويب هوك من تليجرام
-@app.route('/' + TOKEN, methods=['POST'])
-def getMessage():
-    json_string = request.stream.read().decode('utf-8')
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return "!", 200
-
-# الصفحة الرئيسية للسيرفر للتأكد من الحالة
-@app.route('/')
-def index():
-    return "تم إطلاق بوت لارا الشخصي بنجاح وهو يعمل الآن! 🚀🔥", 200
-
-# تشغيل السيرفر بالمنفذ الديناميكي المخصص لـ Railway
+# تشغيل البوت بنظام السحب الدوري المستمر وتجاوز أي أخطاء اتصال مؤقتة
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    print("🚀 بوت لارا الشخصي يعمل الآن بنظام Polling المستقر... أرسل رسالة في تليجرام!")
+    bot.infinity_polling(skip_pending=True)
