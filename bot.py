@@ -1,29 +1,35 @@
 import telebot
 import requests
 
+# تم إضافة المفتاح الخاص بك في الكود مباشرة
+OPENROUTER_API_KEY = "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"
 TOKEN = "8984182509:AAFwLft__ZRL52grDeqTstV37ZRVcSr6URQ"
-GEMINI_API_KEY = "AIzaSyBAU5AUelvh5IWoLWo93ahbVHcBMXzOOfE"
 
 bot = telebot.TeleBot(TOKEN)
 
-def ask_gemini(text):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
-    headers = {"Content-Type": "application/json"}
-    payload = {"contents": [{"parts": [{"text": text}]}]}
-    
+def ask_openrouter(text):
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY.strip()}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "google/gemini-2.0-flash-exp:free",
+        "messages": [{"role": "user", "content": text}]
+    }
     try:
         response = requests.post(url, json=payload, headers=headers)
         if response.status_code == 200:
-            return response.json()['candidates'][0]['content']['parts'][0]['text']
+            return response.json()['choices'][0]['message']['content']
         else:
-            return f"خطأ من جوجل ({response.status_code}): {response.text}"
+            return f"خطأ ({response.status_code}): يرجى التأكد من أن المفتاح نشط في موقع OpenRouter."
     except Exception as e:
-        return str(e)
+        return f"حدث خطأ: {str(e)}"
 
 @bot.message_handler(func=lambda m: True)
 def handle_msg(message):
     bot.send_chat_action(message.chat.id, 'typing')
-    reply = ask_gemini(message.text)
+    reply = ask_openrouter(message.text)
     bot.reply_to(message, reply)
 
 if __name__ == "__main__":
